@@ -74,3 +74,11 @@ class Board:
             for cell in cell_list:
                 print(str(cell.cell_val) + " ", end="")
             print()
+
+    def save_board(self):
+        with open("sudoku.txt", 'w') as f:
+            for cell_list in self.rows:
+                for cell in cell_list:
+                    f.write(str(cell.cell_val) + ", ")
+                f.write('\n')
+
