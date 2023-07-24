@@ -3,6 +3,6 @@ from board import Board
 
 
 if __name__ == '__main__':
-    b = Board()
+    b = Board(9)
     b.draw_board()
     b.save_board()
