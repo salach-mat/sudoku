@@ -12,6 +12,7 @@ class Board:
         self._BOARD_SIZE = board_size
         self._SQRT_BOARD_SIZE = int(math.sqrt(self._BOARD_SIZE))
         self._FILL_BLANK_CHANCE = 0.7
+        self._PART_TO_REMOVE = math.ceil(self._BOARD_SIZE * self._BOARD_SIZE / 1.5)
         self._squares = []
         self._rows = []
         self._cols = []
@@ -82,11 +83,62 @@ class Board:
         return True
 
     def _erase_part_of_the_board(self):
-        # randomly erase and check whether it is possible to solve it
-        for i in range(self._BOARD_SIZE):
-            for j in range(self._BOARD_SIZE):
-                if random.random() < self._FILL_BLANK_CHANCE:
-                    self._rows[i].cells[j].cell_val = 0
+        removed_cells = {}
+        coord = (random.randrange(self._BOARD_SIZE), random.randrange(self._BOARD_SIZE))
+        multi_solutions = False
+        while len(removed_cells) < self._PART_TO_REMOVE:
+            while coord in removed_cells.keys():
+                coord = (random.randrange(self._BOARD_SIZE), random.randrange(self._BOARD_SIZE))
+            removed_cells[coord] = self._rows[coord[0]].cells[coord[1]].cell_val
+            self._rows[coord[0]].cells[coord[1]].cell_val = 0
+
+            self.draw_board()
+            print()
+
+            multi_solutions = self._check_multiple_solutions(removed_cells)
+            if multi_solutions:
+                self._rows[coord[0]].cells[coord[1]].cell_val = removed_cells[coord]
+                break
+
+    def draw_board(self):
+        for cell_list in self._rows:
+            print(*[cell.cell_val for cell in cell_list.cells], sep=" ")
+
+    def _check_multiple_solutions(self, empty_cells):
+        print("rozw: " + str(self._check_multiple_solutions_rec(list(empty_cells.keys()), 0)))
+        return self._check_multiple_solutions_rec(list(empty_cells.keys()), 0) > 1
+
+    def _check_multiple_solutions_rec(self, empty_coords, ind):
+        solution_counter = 0
+        if ind == len(empty_coords):
+            return 1
+
+        row = empty_coords[ind][0]
+        col = empty_coords[ind][1]
+        square_num = int(self._define_which_square(row, col)) - 1
+        cell = self._rows[row].cells[col]
+
+        cell.determine_not_possible_values()
+        cell_poss_vals = self._possible_vals - cell.not_possible_vals
+
+        if len(cell_poss_vals) == 0:
+            return 0
+
+        cell.cell_val = cell_poss_vals.pop()
+        while not self._check_if_can_be_placed(row, col, square_num, cell.cell_val):
+            solution_counter += self._check_multiple_solutions_rec(empty_coords, ind + 1)
+            if len(cell_poss_vals) == 0:
+                cell.cell_val = 0
+                return solution_counter
+            cell.cell_val = cell_poss_vals.pop()
+
+        solution_counter += self._check_multiple_solutions_rec(empty_coords, ind + 1)
+
+
+
+    def _fill_zeros_list(self, coord_list):
+        for coord in coord_list:
+            self._rows[coord[0]].cells[coord[1]].cell_cal = 0
 
     def _define_which_square(self, i, j):
         return self._SQRT_BOARD_SIZE * int(i / self._SQRT_BOARD_SIZE) + 1 + int(j / self._SQRT_BOARD_SIZE)
