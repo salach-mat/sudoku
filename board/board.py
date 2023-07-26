@@ -126,9 +126,9 @@ class Board:
 
     def _init_cols_rows_squares(self):
         for i in range(self._BOARD_SIZE):
-            self._squares.append(Square(i))
-            self._rows.append(Row(i))
-            self._cols.append(Column(i))
+            self._squares.append(Square())
+            self._rows.append(Row())
+            self._cols.append(Column())
 
         for i in range(self._BOARD_SIZE):
             for j in range(self._BOARD_SIZE):
