@@ -11,7 +11,6 @@ class Board:
     def __init__(self, board_size):
         self._BOARD_SIZE = board_size
         self._SQRT_BOARD_SIZE = int(math.sqrt(self._BOARD_SIZE))
-        self._FILL_BLANK_CHANCE = 0.7
         self._PART_TO_REMOVE = math.ceil(self._BOARD_SIZE * self._BOARD_SIZE / 1.5)
         self._squares = []
         self._rows = []
@@ -100,10 +99,6 @@ class Board:
                 self._rows[coord[0]].cells[coord[1]].cell_val = removed_cells[coord]
                 break
 
-    def draw_board(self):
-        for cell_list in self._rows:
-            print(*[cell.cell_val for cell in cell_list.cells], sep=" ")
-
     def _check_multiple_solutions(self, empty_cells):
         print("rozw: " + str(self._check_multiple_solutions_rec(list(empty_cells.keys()), 0)))
         return self._check_multiple_solutions_rec(list(empty_cells.keys()), 0) > 1
@@ -133,8 +128,6 @@ class Board:
             cell.cell_val = cell_poss_vals.pop()
 
         solution_counter += self._check_multiple_solutions_rec(empty_coords, ind + 1)
-
-
 
     def _fill_zeros_list(self, coord_list):
         for coord in coord_list:
