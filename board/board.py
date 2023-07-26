@@ -29,7 +29,7 @@ class Board:
     def _clear_board(self):
         for i in range(self._BOARD_SIZE):
             for j in range(self._BOARD_SIZE):
-                self._rows[i].cells[j].cell_val = 0
+                self._rows[i].get_cell_at(j).set_value(0)
 
     def _fill_diagonal(self):
         for i in range(0, self._BOARD_SIZE, self._SQRT_BOARD_SIZE):
@@ -39,14 +39,13 @@ class Board:
         for i in range(self._SQRT_BOARD_SIZE):
             for j in range(self._SQRT_BOARD_SIZE):
                 square_num = int(self._define_which_square(row + i, col + j)) - 1
-                cell = self._rows[row + i].cells[col + j]
-                cell.determine_not_possible_values()
-                cell_poss_vals = self._possible_vals - cell.not_possible_vals
+                cell = self._rows[row + i].get_cell_at(col + j)
+                cell_poss_vals = self._possible_vals - cell.get_not_possible_vals()
                 cell_poss_vals = [*cell_poss_vals]
                 cell_val = random.choice(cell_poss_vals)
                 while not self._check_if_can_be_placed(row + i, col + j, square_num, cell_val):
                     cell_val = random.choice(cell_poss_vals)
-                cell.cell_val = cell_val
+                cell.set_value(cell_val)
 
     def _fill_remaining(self):
         start_row, start_col = 0, self._SQRT_BOARD_SIZE
@@ -60,47 +59,41 @@ class Board:
             row, col = row + 1, 0
 
         square_num = int(self._define_which_square(row, col)) - 1
-        cell = self._rows[row].cells[col]
+        cell = self._rows[row].get_cell_at(col)
 
-        if cell.cell_val != 0:
+        if cell.get_value() != 0:
             return self._fill_remaining_recur(row, col + 1)
 
-        cell.determine_not_possible_values()
-        cell_poss_vals = self._possible_vals - cell.not_possible_vals
+        cell_poss_vals = self._possible_vals - cell.get_not_possible_vals()
 
         if len(cell_poss_vals) == 0:
             return False
 
-        cell.cell_val = cell_poss_vals.pop()
-        while not self._check_if_can_be_placed(row, col, square_num, cell.cell_val)\
+        cell.set_value(cell_poss_vals.pop())
+        while not self._check_if_can_be_placed(row, col, square_num, cell.get_value())\
                 and not self._fill_remaining_recur(row, col + 1):
             if len(cell_poss_vals) == 0:
-                cell.cell_val = 0
+                cell.set_value(0)
                 return False
-            cell.cell_val = cell_poss_vals.pop()
+            cell.set_value(cell_poss_vals.pop())
 
         return True
 
     def _erase_part_of_the_board(self):
         removed_cells = {}
         coord = (random.randrange(self._BOARD_SIZE), random.randrange(self._BOARD_SIZE))
-        multi_solutions = False
         while len(removed_cells) < self._PART_TO_REMOVE:
             while coord in removed_cells.keys():
                 coord = (random.randrange(self._BOARD_SIZE), random.randrange(self._BOARD_SIZE))
-            removed_cells[coord] = self._rows[coord[0]].cells[coord[1]].cell_val
-            self._rows[coord[0]].cells[coord[1]].cell_val = 0
-
-            self.draw_board()
-            print()
+            removed_cells[coord] = self._rows[coord[0]].get_cell_at(coord[1]).get_value()
+            self._rows[coord[0]].get_cell_at(coord[1]).set_value(0)
 
             multi_solutions = self._check_multiple_solutions(removed_cells)
             if multi_solutions:
-                self._rows[coord[0]].cells[coord[1]].cell_val = removed_cells[coord]
+                self._rows[coord[0]].get_cell_at(coord[1]).set_value(removed_cells[coord])
                 break
 
     def _check_multiple_solutions(self, empty_cells):
-        print("rozw: " + str(self._check_multiple_solutions_rec(list(empty_cells.keys()), 0)))
         return self._check_multiple_solutions_rec(list(empty_cells.keys()), 0) > 1
 
     def _check_multiple_solutions_rec(self, empty_coords, ind):
@@ -111,27 +104,22 @@ class Board:
         row = empty_coords[ind][0]
         col = empty_coords[ind][1]
         square_num = int(self._define_which_square(row, col)) - 1
-        cell = self._rows[row].cells[col]
+        cell = self._rows[row].get_cell_at(col)
 
-        cell.determine_not_possible_values()
-        cell_poss_vals = self._possible_vals - cell.not_possible_vals
+        cell_poss_vals = self._possible_vals - cell.get_not_possible_vals()
 
         if len(cell_poss_vals) == 0:
             return 0
 
-        cell.cell_val = cell_poss_vals.pop()
-        while not self._check_if_can_be_placed(row, col, square_num, cell.cell_val):
+        cell.set_value(cell_poss_vals.pop())
+        while not self._check_if_can_be_placed(row, col, square_num, cell.get_value()):
             solution_counter += self._check_multiple_solutions_rec(empty_coords, ind + 1)
             if len(cell_poss_vals) == 0:
-                cell.cell_val = 0
+                cell.set_value(0)
                 return solution_counter
-            cell.cell_val = cell_poss_vals.pop()
+            cell.set_value(cell_poss_vals.pop())
 
         solution_counter += self._check_multiple_solutions_rec(empty_coords, ind + 1)
-
-    def _fill_zeros_list(self, coord_list):
-        for coord in coord_list:
-            self._rows[coord[0]].cells[coord[1]].cell_cal = 0
 
     def _define_which_square(self, i, j):
         return self._SQRT_BOARD_SIZE * int(i / self._SQRT_BOARD_SIZE) + 1 + int(j / self._SQRT_BOARD_SIZE)
@@ -146,9 +134,9 @@ class Board:
             for j in range(self._BOARD_SIZE):
                 square_num = int(self._define_which_square(i, j)) - 1
                 cell = Cell(0, self._squares[square_num], self._cols[j], self._rows[i])
-                self._rows[i].cells.append(cell)
-                self._cols[j].cells.append(cell)
-                self._squares[square_num].cells.append(cell)
+                self._rows[i].add_cell(cell)
+                self._cols[j].add_cell(cell)
+                self._squares[square_num].add_cell(cell)
 
     def _check_if_can_be_placed(self, i, j, square_num, num):
         in_row = num not in self._rows[i].get_existing_values()
