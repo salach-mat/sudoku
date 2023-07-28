@@ -12,19 +12,30 @@ class Board:
         self._BOARD_SIZE = board_size
         self._SQRT_BOARD_SIZE = int(math.sqrt(self._BOARD_SIZE))
         self._PART_TO_REMOVE = math.ceil(self._BOARD_SIZE * self._BOARD_SIZE / 1.5)
-        self._squares = []
-        self._rows = []
-        self._cols = []
         self._possible_vals = {x + 1 for x in range(self._BOARD_SIZE)}
+
+        self._squares = [Square(self._possible_vals.copy()) for _ in range(self._BOARD_SIZE)]
+        self._rows = [Row(self._possible_vals.copy()) for _ in range(self._BOARD_SIZE)]
+        self._cols = [Column(self._possible_vals.copy()) for _ in range(self._BOARD_SIZE)]
+        self._cells = [Cell(self._possible_vals.copy()) for _ in range(self._BOARD_SIZE ** 2)]
+
+        for i, cell in enumerate(self._cells):
+            row_num = i // self._BOARD_SIZE
+            col_num = i % self._BOARD_SIZE
+            square_num = self._define_which_square(row_num, col_num)
+
+            self._rows[row_num].add_cell(cell)
+            self._cols[col_num].add_cell(cell)
+            self._squares[square_num].add_cell(cell)
+
         self._create_board()
 
     def _create_board(self):
-        self._init_cols_rows_squares()
         self._fill_diagonal()
-        while not self._fill_remaining():
-            self._clear_board()
-            self._fill_diagonal()
-        self._erase_part_of_the_board()
+        # while not self._fill_remaining():
+        #     self._clear_board()
+        #     self._fill_diagonal()
+        # self._erase_part_of_the_board()
 
     def _clear_board(self):
         for i in range(self._BOARD_SIZE):
@@ -32,20 +43,30 @@ class Board:
                 self._rows[i].get_cell_at(j).set_value(0)
 
     def _fill_diagonal(self):
-        for i in range(0, self._BOARD_SIZE, self._SQRT_BOARD_SIZE):
-            self._fill_box(i, i)
+        sqr_size = int(math.sqrt(self._BOARD_SIZE))
+        ind = 0
+        for _ in range(sqr_size):
+            self._fill_box(ind)
+            ind += sqr_size + 1
 
-    def _fill_box(self, row, col):
-        for i in range(self._SQRT_BOARD_SIZE):
-            for j in range(self._SQRT_BOARD_SIZE):
-                square_num = int(self._define_which_square(row + i, col + j)) - 1
-                cell = self._rows[row + i].get_cell_at(col + j)
-                cell_poss_vals = self._possible_vals - cell.get_not_possible_vals()
-                cell_poss_vals = [*cell_poss_vals]
-                cell_val = random.choice(cell_poss_vals)
-                while not self._check_if_can_be_placed(row + i, col + j, square_num, cell_val):
-                    cell_val = random.choice(cell_poss_vals)
-                cell.set_value(cell_val)
+    def _fill_box(self, square):
+        for i in range(len(self._cells)):
+            row_num = i // self._BOARD_SIZE
+            col_num = i % self._BOARD_SIZE
+            square_num = self._define_which_square(row_num, col_num)
+
+            if square == square_num:
+                self._cells[i].choose_value()
+        # for i in range(self._SQRT_BOARD_SIZE):
+        #     for j in range(self._SQRT_BOARD_SIZE):
+        #         square_num = int(self._define_which_square(row + i, col + j))
+        #         cell = self._rows[row + i].get_cell_at(col + j)
+        #         cell_poss_vals = self._possible_vals - cell.get_not_possible_vals()
+        #         cell_poss_vals = [*cell_poss_vals]
+        #         cell_val = random.choice(cell_poss_vals)
+        #         while not self._check_if_can_be_placed(row + i, col + j, square_num, cell_val):
+        #             cell_val = random.choice(cell_poss_vals)
+        #         cell.set_value(cell_val)
 
     def _fill_remaining(self):
         start_row, start_col = 0, self._SQRT_BOARD_SIZE
@@ -58,7 +79,7 @@ class Board:
         if col == col == self._BOARD_SIZE:
             row, col = row + 1, 0
 
-        square_num = int(self._define_which_square(row, col)) - 1
+        square_num = int(self._define_which_square(row, col))
         cell = self._rows[row].get_cell_at(col)
 
         if cell.get_value() != 0:
@@ -103,7 +124,7 @@ class Board:
 
         row = empty_coords[ind][0]
         col = empty_coords[ind][1]
-        square_num = int(self._define_which_square(row, col)) - 1
+        square_num = int(self._define_which_square(row, col))
         cell = self._rows[row].get_cell_at(col)
 
         cell_poss_vals = self._possible_vals - cell.get_not_possible_vals()
@@ -121,22 +142,14 @@ class Board:
 
         solution_counter += self._check_multiple_solutions_rec(empty_coords, ind + 1)
 
-    def _define_which_square(self, i, j):
-        return self._SQRT_BOARD_SIZE * int(i / self._SQRT_BOARD_SIZE) + 1 + int(j / self._SQRT_BOARD_SIZE)
+    def _define_which_square(self, row_num, col_num):
+        sqr_size = int(math.sqrt(self._BOARD_SIZE))
+        return sqr_size * (row_num // sqr_size) + col_num // sqr_size
 
-    def _init_cols_rows_squares(self):
-        for i in range(self._BOARD_SIZE):
-            self._squares.append(Square())
-            self._rows.append(Row())
-            self._cols.append(Column())
-
-        for i in range(self._BOARD_SIZE):
-            for j in range(self._BOARD_SIZE):
-                square_num = int(self._define_which_square(i, j)) - 1
-                cell = Cell(0, self._squares[square_num], self._cols[j], self._rows[i])
-                self._rows[i].add_cell(cell)
-                self._cols[j].add_cell(cell)
-                self._squares[square_num].add_cell(cell)
+    def _add_cell_to_row_col_square(self, row, col, square, cell):
+        self._rows[row].add_cell(cell)
+        self._cols[col].add_cell(cell)
+        self._squares[square].add_cell(cell)
 
     def _check_if_can_be_placed(self, i, j, square_num, num):
         in_row = num not in self._rows[i].get_existing_values()
