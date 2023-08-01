@@ -6,4 +6,4 @@ class Column(StoreCells):
 
     def add_cell(self, cell: Cell) -> None:
         super().add_cell(cell)
-        cell._col = self
+        cell.col = self

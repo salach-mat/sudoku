@@ -32,6 +32,7 @@ class Board:
 
     def _create_board(self):
         self._fill_diagonal()
+        self._fill_remaining()
         # while not self._fill_remaining():
         #     self._clear_board()
         #     self._fill_diagonal()
@@ -57,46 +58,45 @@ class Board:
 
             if square == square_num:
                 self._cells[i].choose_value()
-        # for i in range(self._SQRT_BOARD_SIZE):
-        #     for j in range(self._SQRT_BOARD_SIZE):
-        #         square_num = int(self._define_which_square(row + i, col + j))
-        #         cell = self._rows[row + i].get_cell_at(col + j)
-        #         cell_poss_vals = self._possible_vals - cell.get_not_possible_vals()
-        #         cell_poss_vals = [*cell_poss_vals]
-        #         cell_val = random.choice(cell_poss_vals)
-        #         while not self._check_if_can_be_placed(row + i, col + j, square_num, cell_val):
-        #             cell_val = random.choice(cell_poss_vals)
-        #         cell.set_value(cell_val)
 
     def _fill_remaining(self):
-        start_row, start_col = 0, self._SQRT_BOARD_SIZE
-        return self._fill_remaining_recur(start_row, start_col)
+        start_ind = 0
+        return self._fill_remaining_recur(start_ind)
 
-    def _fill_remaining_recur(self, row, col):
-        if row == self._BOARD_SIZE - 1 and col == self._BOARD_SIZE:
+    def _fill_remaining_recur(self, ind):
+        for i in range(self._BOARD_SIZE ** 2):
+            if i % self._BOARD_SIZE == 0:
+                print()
+            print(self._cells[i].get_value() if self._cells[i].get_value() is not None else "X", end=" ")
+        print(self._cells[ind].row.possible_values)
+        print(self._cells[ind].col.possible_values)
+        print(self._cells[ind].square.possible_values)
+        print(self._cells[ind].possible_values)
+        print(ind)
+        print()
+        if ind == self._BOARD_SIZE ** 2:
             return True
 
-        if col == col == self._BOARD_SIZE:
-            row, col = row + 1, 0
+        cell = self._cells[ind]
 
-        square_num = int(self._define_which_square(row, col))
-        cell = self._rows[row].get_cell_at(col)
+        if cell.get_value() is not None:
+            return self._fill_remaining_recur(ind + 1)
 
-        if cell.get_value() != 0:
-            return self._fill_remaining_recur(row, col + 1)
-
-        cell_poss_vals = self._possible_vals - cell.get_not_possible_vals()
-
-        if len(cell_poss_vals) == 0:
+        if len(cell.get_possible_values()) == 0:
             return False
 
-        cell.set_value(cell_poss_vals.pop())
-        while not self._check_if_can_be_placed(row, col, square_num, cell.get_value())\
-                and not self._fill_remaining_recur(row, col + 1):
-            if len(cell_poss_vals) == 0:
-                cell.set_value(0)
+        cell.choose_value()
+        while not self._fill_remaining_recur(ind + 1):
+            if len(cell.get_possible_values()) == 0:
+                # cell.remove_actual_value()
                 return False
-            cell.set_value(cell_poss_vals.pop())
+            cell.choose_value()
+        # while not self._check_if_can_be_placed(row, col, square_num, cell.get_value())\
+        #         and not self._fill_remaining_recur(row, col + 1):
+        #     if len(cell_poss_vals) == 0:
+        #         cell.set_value(0)
+        #         return False
+        #     cell.set_value(cell_poss_vals.pop())
 
         return True
 
